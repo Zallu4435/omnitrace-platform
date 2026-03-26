@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/distributed-tracing-demo/src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "tsConfigPath": "apps/distributed-tracing-demo/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/distributed-tracing-demo",
+  "projects": {
+    "distributed-tracing-demo": {
+      "type": "application",
+      "root": "apps/distributed-tracing-demo",
+      "entryFile": "main",
+      "sourceRoot": "apps/distributed-tracing-demo/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/distributed-tracing-demo/tsconfig.app.json"
+      }
+    },
+    "email-service": {
+      "type": "application",
+      "root": "apps/email-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/email-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/email-service/tsconfig.app.json"
+      }
+    },
+    "payment-service": {
+      "type": "application",
+      "root": "apps/payment-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/payment-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/payment-service/tsconfig.app.json"
+      }
+    }
+  }
+}

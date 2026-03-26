@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: demo-rabbitmq
+    ports:
+      - "5672:5672" # Message broker port
+      - "15672:15672" # RabbitMQ Management UI
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: demo-jaeger
+    ports:
+      - "16686:16686" # Jaeger Web UI
+      - "4318:4318" # OTLP HTTP receiver (where our traces will go)
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: demo-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: demo-grafana
+    ports:
+      - "4000:3000" # Mapped to 4000 to avoid conflicting with Service A
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Sets a simple default password
+    depends_on:
+      - prometheus
