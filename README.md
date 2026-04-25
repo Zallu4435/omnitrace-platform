@@ -1,7 +1,7 @@
 # 🚀 Event-Driven Microservices with End-to-End Observability
 
 ## Objective
-A production-ready microservices architecture built with NestJS to demonstrate advanced distributed system patterns. This project serves as a technical showcase of **Event-Driven Architecture (EDA)** and the **Three Pillars of Observability** (Traces, Metrics, and Logs) using OpenTelemetry, Prometheus, Grafana, and RabbitMQ.
+A production-ready microservices architecture built with NestJS to demonstrate advanced distributed system patterns. This project serves as a technical showcase of **Event-Driven Architecture (EDA)** and full-stack Observability using OpenTelemetry, Prometheus, Alertmanager, Grafana, and RabbitMQ.
 
 ## 🏗 Architecture Overview
 The system models a simplified e-commerce checkout flow, highlighting the transition from synchronous HTTP calls to asynchronous background processing without losing context.
@@ -16,6 +16,7 @@ This project implements a complete observability stack to monitor, trace, and de
 * **1. Traces (OpenTelemetry & Jaeger):** Captures end-to-end request latency. Features **manual trace context propagation** (inject/extract) to maintain trace continuity when moving from HTTP to the RabbitMQ message broker.
 * **2. Metrics (Prometheus & Grafana):** Exposes a `/metrics` endpoint to track custom business metrics (e.g., `orders_created_total`), visualized in real-time via Grafana dashboards.
 * **3. Logs (Pino JSON Logger + Grafana Loki):** Contextual structured logging. OpenTelemetry Trace IDs are automatically injected into JSON log payloads. These logs are streamed natively from NestJS to a centralized Grafana Loki database, allowing exact cross-service debugging by Trace ID.
+* **4. Alerts (Prometheus & Alertmanager):** Proactive system monitoring with configured rules (e.g. `InstanceDown`, `HighErrorRate`) that trigger notifications to external channels like Slack or webhooks.
 
 ## 🛠 Technology Stack
 * **Framework:** NestJS (TypeScript)
@@ -23,6 +24,7 @@ This project implements a complete observability stack to monitor, trace, and de
 * **Tracing:** OpenTelemetry (OTLP Exporter) + Jaeger UI
 * **Metrics:** Prometheus + Grafana (`@willsoto/nestjs-prometheus`)
 * **Logging:** Pino (`nestjs-pino`) + Grafana Loki (`pino-loki`)
+* **Alerting:** Alertmanager
 * **Infrastructure:** Docker & Docker Compose
 
 ---
@@ -73,7 +75,8 @@ Once you have triggered a few orders, explore the generated data across the infr
 | **Grafana** | [http://localhost:4000](http://localhost:4000) | `admin` / `admin` | View real-time metrics and order counters. |
 | **Jaeger** | [http://localhost:16686](http://localhost:16686) | (None) | Visualize the waterfall timeline of distributed traces. |
 | **RabbitMQ** | [http://localhost:15672](http://localhost:15672) | `guest` / `guest` | Monitor message queues and exchanges. |
-| **Prometheus**| [http://localhost:9090](http://localhost:9090) | (None) | Query raw metric data. |
+| **Prometheus**| [http://localhost:9090](http://localhost:9090) | (None) | Query raw metric data and view configured alerting rules. |
+| **Alertmanager**| [http://localhost:9093](http://localhost:9093) | (None) | View active alerts, silences, and routing configurations. |
 | **Loki**| Accessed via Grafana Explore | (None) | Centralized logging. Filter all cross-service logs using `{application=~".+"} |= "YOUR-TRACE-ID"`. |
 
 ## 🧠 Key Technical Highlights for Review

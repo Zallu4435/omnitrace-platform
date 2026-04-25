@@ -1,0 +1,23 @@
+route:
+  receiver: 'default-webhook'
+  group_wait: 10s
+  group_interval: 2m
+  repeat_interval: 1h
+  routes:
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+
+receivers:
+  - name: 'default-webhook'
+    webhook_configs:
+      # This is a dummy URL. In production, this could be a Slack webhook or an alerting tool like PagerDuty.
+      # You can test with a free webhook service (e.g. webhook.site) and replace this URL.
+      - url: 'http://host.docker.internal:3000/alert-webhook-placeholder'
+        send_resolved: true
+
+  - name: 'critical-alerts'
+    webhook_configs:
+      # A highly critical alert might go to a different channel or service.
+      - url: 'http://host.docker.internal:3000/critical-webhook-placeholder'
+        send_resolved: true
