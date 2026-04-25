@@ -39,3 +39,11 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin # Sets a simple default password
     depends_on:
       - prometheus
+      - loki
+
+  loki:
+    image: grafana/loki:latest
+    container_name: demo-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml

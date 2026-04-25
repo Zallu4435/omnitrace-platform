@@ -8,8 +8,21 @@ import { trace, context } from '@opentelemetry/api';
     LoggerModule.forRoot({
       pinoHttp: {
         transport: {
-          target: 'pino-pretty',
-          options: { colorize: true, singleLine: true },
+          targets: [
+            {
+              target: 'pino-pretty',
+              options: { colorize: true, singleLine: true },
+            },
+            {
+              target: 'pino-loki',
+              options: {
+                batching: true,
+                interval: 5,
+                host: 'http://localhost:3100', // Loki URL
+                labels: { application: 'email-service' },
+              },
+            },
+          ],
         },
         mixin() {
           const span = trace.getSpan(context.active());
@@ -20,4 +33,4 @@ import { trace, context } from '@opentelemetry/api';
   ],
   controllers: [EmailServiceController],
 })
-export class EmailServiceModule {}
+export class EmailServiceModule { }

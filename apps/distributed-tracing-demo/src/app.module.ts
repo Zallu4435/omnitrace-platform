@@ -15,8 +15,21 @@ import { trace, context } from '@opentelemetry/api';
     LoggerModule.forRoot({
       pinoHttp: {
         transport: {
-          target: 'pino-pretty',
-          options: { colorize: true, singleLine: true },
+          targets: [
+            {
+              target: 'pino-pretty',
+              options: { colorize: true, singleLine: true },
+            },
+            {
+              target: 'pino-loki',
+              options: {
+                batching: true,
+                interval: 5,
+                host: 'http://localhost:3100', // Loki URL
+                labels: { application: 'order-gateway' },
+              },
+            },
+          ],
         },
         // INTERVIEW FLEX: Auto-inject Trace ID from OpenTelemetry into every log
         mixin() {

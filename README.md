@@ -15,14 +15,14 @@ This project implements a complete observability stack to monitor, trace, and de
 
 * **1. Traces (OpenTelemetry & Jaeger):** Captures end-to-end request latency. Features **manual trace context propagation** (inject/extract) to maintain trace continuity when moving from HTTP to the RabbitMQ message broker.
 * **2. Metrics (Prometheus & Grafana):** Exposes a `/metrics` endpoint to track custom business metrics (e.g., `orders_created_total`), visualized in real-time via Grafana dashboards.
-* **3. Logs (Pino JSON Logger):** Contextual structured logging. OpenTelemetry Trace IDs are automatically injected into JSON log payloads to allow exact cross-service request filtering.
+* **3. Logs (Pino JSON Logger + Grafana Loki):** Contextual structured logging. OpenTelemetry Trace IDs are automatically injected into JSON log payloads. These logs are streamed natively from NestJS to a centralized Grafana Loki database, allowing exact cross-service debugging by Trace ID.
 
 ## 🛠 Technology Stack
 * **Framework:** NestJS (TypeScript)
 * **Message Broker:** RabbitMQ
 * **Tracing:** OpenTelemetry (OTLP Exporter) + Jaeger UI
 * **Metrics:** Prometheus + Grafana (`@willsoto/nestjs-prometheus`)
-* **Logging:** Pino (`nestjs-pino`)
+* **Logging:** Pino (`nestjs-pino`) + Grafana Loki (`pino-loki`)
 * **Infrastructure:** Docker & Docker Compose
 
 ---
@@ -34,13 +34,13 @@ This project implements a complete observability stack to monitor, trace, and de
 * Docker & Docker Compose
 
 ### 2. Start the Infrastructure
-Spin up RabbitMQ, Jaeger, Prometheus, and Grafana in the background:
-\`\`\`bash
+Spin up RabbitMQ, Jaeger, Prometheus, Grafana, and Loki in the background:
+```bash
 docker-compose up -d
-\`\`\`
+```
 
 ### 3. Install Dependencies
-\`\`\`bash
+```bash
 npm install
 \`\`\`
 
@@ -74,6 +74,7 @@ Once you have triggered a few orders, explore the generated data across the infr
 | **Jaeger** | [http://localhost:16686](http://localhost:16686) | (None) | Visualize the waterfall timeline of distributed traces. |
 | **RabbitMQ** | [http://localhost:15672](http://localhost:15672) | `guest` / `guest` | Monitor message queues and exchanges. |
 | **Prometheus**| [http://localhost:9090](http://localhost:9090) | (None) | Query raw metric data. |
+| **Loki**| Accessed via Grafana Explore | (None) | Centralized logging. Filter all cross-service logs using `{application=~".+"} |= "YOUR-TRACE-ID"`. |
 
 ## 🧠 Key Technical Highlights for Review
 * **Manual Context Propagation (`tracer.ts`):** Check the `PaymentServiceController` to see how the active OpenTelemetry Trace ID is injected into the RabbitMQ message headers, and the `EmailServiceController` to see how it is extracted to resume the trace.
