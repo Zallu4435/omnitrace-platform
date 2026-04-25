@@ -1,22 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/distributed-tracing-demo/src",
+  "sourceRoot": "apps/order-gateway/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/distributed-tracing-demo/tsconfig.app.json"
+    "tsConfigPath": "apps/order-gateway/tsconfig.app.json"
   },
   "monorepo": true,
-  "root": "apps/distributed-tracing-demo",
+  "root": "apps/order-gateway",
   "projects": {
-    "distributed-tracing-demo": {
+    "order-gateway": {
       "type": "application",
-      "root": "apps/distributed-tracing-demo",
+      "root": "apps/order-gateway",
       "entryFile": "main",
-      "sourceRoot": "apps/distributed-tracing-demo/src",
+      "sourceRoot": "apps/order-gateway/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/distributed-tracing-demo/tsconfig.app.json"
+        "tsConfigPath": "apps/order-gateway/tsconfig.app.json"
       }
     },
     "email-service": {

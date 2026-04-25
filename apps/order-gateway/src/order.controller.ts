@@ -10,13 +10,13 @@ export interface PaymentResponse {
 }
 
 @Controller()
-export class AppController {
-  private readonly logger = new Logger(AppController.name);
+export class OrderController {
+  private readonly logger = new Logger(OrderController.name);
 
   constructor(
     private readonly httpService: HttpService,
     @InjectMetric('orders_created_total') public counter: Counter<string>,
-  ) {}
+  ) { }
 
   @Post('create-order')
   async createOrder() {

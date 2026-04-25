@@ -1,5 +1,5 @@
 {
-  "name": "distributed-tracing-demo",
+  "name": "microservices-observability-platform",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -11,7 +11,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/apps/distributed-tracing-demo/main",
+    "start:prod": "node dist/apps/order-gateway/main",
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix"
   },
   "dependencies": {

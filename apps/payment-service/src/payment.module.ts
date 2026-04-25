@@ -1,17 +1,25 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { HttpModule } from '@nestjs/axios';
-import {
-  PrometheusModule,
-  makeCounterProvider,
-} from '@willsoto/nestjs-prometheus';
+import { PaymentController } from './payment.controller';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { LoggerModule } from 'nestjs-pino';
 import { trace, context } from '@opentelemetry/api';
 
 @Module({
   imports: [
-    HttpModule,
-    PrometheusModule.register(), // This creates the /metrics endpoint
+    // Register the RabbitMQ client
+    ClientsModule.register([
+      {
+        name: 'RABBITMQ_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://localhost:5672'], // Our Docker RabbitMQ
+          queue: 'demo_queue',
+          queueOptions: {
+            durable: false, // Keep it simple for the demo
+          },
+        },
+      },
+    ]),
     LoggerModule.forRoot({
       pinoHttp: {
         transport: {
@@ -26,12 +34,11 @@ import { trace, context } from '@opentelemetry/api';
                 batching: true,
                 interval: 5,
                 host: 'http://localhost:3100', // Loki URL
-                labels: { application: 'order-gateway' },
+                labels: { application: 'payment-service' },
               },
             },
           ],
         },
-        // INTERVIEW FLEX: Auto-inject Trace ID from OpenTelemetry into every log
         mixin() {
           const span = trace.getSpan(context.active());
           return span ? { traceId: span.spanContext().traceId } : {};
@@ -39,12 +46,6 @@ import { trace, context } from '@opentelemetry/api';
       },
     }),
   ],
-  controllers: [AppController],
-  providers: [
-    makeCounterProvider({
-      name: 'orders_created_total',
-      help: 'Total number of orders created',
-    }),
-  ],
+  controllers: [PaymentController],
 })
-export class AppModule {}
+export class PaymentModule { }

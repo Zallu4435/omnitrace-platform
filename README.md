@@ -50,7 +50,7 @@ npm install
 Open three separate terminals to run each service concurrently:
 \`\`\`bash
 # Terminal 1
-npm run start distributed-tracing-demo
+npm run start order-gateway
 
 # Terminal 2
 npm run start payment-service

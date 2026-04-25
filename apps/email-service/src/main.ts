@@ -1,16 +1,16 @@
 // 1. Initialize tracing FIRST
-import { setupTracing } from '../../../tracer';
+import { setupTracing } from '../../../libs/tracing/src/tracer';
 setupTracing('email-service');
 
 import { NestFactory } from '@nestjs/core';
-import { EmailServiceModule } from './email-service.module';
+import { EmailModule } from './email.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
   // 2. Create a pure Microservice instead of a standard HTTP app
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    EmailServiceModule,
+    EmailModule,
     {
       transport: Transport.RMQ,
       options: {

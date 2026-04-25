@@ -3,16 +3,16 @@ import { EventEmitter } from 'events';
 EventEmitter.defaultMaxListeners = 15;
 
 // 1. THIS MUST BE THE VERY FIRST IMPORT
-import { setupTracing } from '../../../tracer';
+import { setupTracing } from '../../../libs/tracing/src/tracer';
 setupTracing('order-gateway');
 
 // 2. Now import the rest of NestJS
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { OrderModule } from './order.module';
 import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(OrderModule);
   // Tell Nest to use the Pino logger
   app.useLogger(app.get(Logger));
   // We will run Service A on port 3000

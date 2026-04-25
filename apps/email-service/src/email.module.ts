@@ -1,25 +1,10 @@
 import { Module } from '@nestjs/common';
-import { PaymentServiceController } from './payment-service.controller';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { EmailController } from './email.controller';
 import { LoggerModule } from 'nestjs-pino';
 import { trace, context } from '@opentelemetry/api';
 
 @Module({
   imports: [
-    // Register the RabbitMQ client
-    ClientsModule.register([
-      {
-        name: 'RABBITMQ_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://localhost:5672'], // Our Docker RabbitMQ
-          queue: 'demo_queue',
-          queueOptions: {
-            durable: false, // Keep it simple for the demo
-          },
-        },
-      },
-    ]),
     LoggerModule.forRoot({
       pinoHttp: {
         transport: {
@@ -34,7 +19,7 @@ import { trace, context } from '@opentelemetry/api';
                 batching: true,
                 interval: 5,
                 host: 'http://localhost:3100', // Loki URL
-                labels: { application: 'payment-service' },
+                labels: { application: 'email-service' },
               },
             },
           ],
@@ -46,6 +31,6 @@ import { trace, context } from '@opentelemetry/api';
       },
     }),
   ],
-  controllers: [PaymentServiceController],
+  controllers: [EmailController],
 })
-export class PaymentServiceModule {}
+export class EmailModule { }

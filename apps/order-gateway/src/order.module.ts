@@ -1,10 +1,17 @@
 import { Module } from '@nestjs/common';
-import { EmailServiceController } from './email-service.controller';
+import { OrderController } from './order.controller';
+import { HttpModule } from '@nestjs/axios';
+import {
+  PrometheusModule,
+  makeCounterProvider,
+} from '@willsoto/nestjs-prometheus';
 import { LoggerModule } from 'nestjs-pino';
 import { trace, context } from '@opentelemetry/api';
 
 @Module({
   imports: [
+    HttpModule,
+    PrometheusModule.register(), // This creates the /metrics endpoint
     LoggerModule.forRoot({
       pinoHttp: {
         transport: {
@@ -19,11 +26,12 @@ import { trace, context } from '@opentelemetry/api';
                 batching: true,
                 interval: 5,
                 host: 'http://localhost:3100', // Loki URL
-                labels: { application: 'email-service' },
+                labels: { application: 'order-gateway' },
               },
             },
           ],
         },
+        // INTERVIEW FLEX: Auto-inject Trace ID from OpenTelemetry into every log
         mixin() {
           const span = trace.getSpan(context.active());
           return span ? { traceId: span.spanContext().traceId } : {};
@@ -31,6 +39,12 @@ import { trace, context } from '@opentelemetry/api';
       },
     }),
   ],
-  controllers: [EmailServiceController],
+  controllers: [OrderController],
+  providers: [
+    makeCounterProvider({
+      name: 'orders_created_total',
+      help: 'Total number of orders created',
+    }),
+  ],
 })
-export class EmailServiceModule { }
+export class OrderModule { }

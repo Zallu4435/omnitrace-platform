@@ -4,13 +4,13 @@ import { context, propagation } from '@opentelemetry/api';
 import { lastValueFrom } from 'rxjs';
 
 @Controller()
-export class PaymentServiceController {
-  private readonly logger = new Logger(PaymentServiceController.name);
+export class PaymentController {
+  private readonly logger = new Logger(PaymentController.name);
 
   // Inject the RabbitMQ client we just registered
   constructor(
     @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
-  ) {}
+  ) { }
 
   @Post('process-payment')
   async processPayment() {

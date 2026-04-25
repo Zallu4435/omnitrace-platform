@@ -9,8 +9,8 @@ export interface PaymentSucceededEvent {
 }
 
 @Controller()
-export class EmailServiceController {
-  private readonly logger = new Logger(EmailServiceController.name);
+export class EmailController {
+  private readonly logger = new Logger(EmailController.name);
   // Grab the global OpenTelemetry tracer
   private tracer = trace.getTracer('email-service-tracer');
 
