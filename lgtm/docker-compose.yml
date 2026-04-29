@@ -1,0 +1,77 @@
+version: '3.8'
+
+# ============================================================
+# LGTM STACK — Loki + Grafana + Tempo + Mimir
+# ============================================================
+# Run with: docker-compose -f lgtm/docker-compose.yml up -d
+#
+# ⚠️  PORT DESIGN: Each stack uses the SAME standard ports so
+# the NestJS app code never needs to change between stacks.
+#   Loki  :3100  Tempo  :4318  Mimir  :9009  Grafana :5000
+#
+# ⚠️  Run ONE stack at a time. Do NOT run observability/ and
+# lgtm/ simultaneously — they share ports 3100 and 4318.
+# ============================================================
+
+services:
+
+  # ── 1. LOKI (Logs) ────────────────────────────────────────
+  loki:
+    image: grafana/loki:latest
+    container_name: lgtm-loki
+    ports:
+      - "3100:3100" # Same port as observability stack — run one stack at a time
+    command: -config.file=/etc/loki/local-config.yaml
+
+  # ── 2. TEMPO (Traces) ─────────────────────────────────────
+  tempo:
+    image: grafana/tempo:latest
+    container_name: lgtm-tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo.yaml:ro
+    ports:
+      - "3200:3200" # Tempo UI / API
+      - "4318:4318" # OTLP HTTP — same port as Jaeger, run one stack at a time
+
+  # ── 3. MIMIR (Metrics Storage) ────────────────────────────
+  # Replaces the local storage of Prometheus.
+  mimir:
+    image: grafana/mimir:latest
+    container_name: lgtm-mimir
+    command: [ "-config.file=/etc/mimir.yml" ]
+    volumes:
+      - ./mimir/mimir.yml:/etc/mimir.yml:ro
+    ports:
+      - "9009:9009"
+
+  # ── 4. PROMETHEUS (Scraper) ───────────────────────────────
+  # In this stack, Prometheus acts as a "Collector".
+  # It scrapes your apps and "Remote Writes" to Mimir.
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: lgtm-prometheus
+    # No port exposed: only needs to scrape apps and write to mimir internally
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mimir
+
+  # ── 5. GRAFANA (UI) ───────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: lgtm-grafana
+    ports:
+      - "5000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - loki
+      - tempo
+      - mimir

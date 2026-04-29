@@ -29,6 +29,16 @@ import { trace, context } from '@opentelemetry/api';
                 labels: { application: 'order-gateway' },
               },
             },
+            // ── ELK: Write JSON logs to file for Filebeat to pick up ──
+            // Filebeat tails this file → Logstash parses it → Elasticsearch stores it → Kibana shows it
+            {
+              target: 'pino/file',
+              options: {
+                destination: './logs/order-gateway.log',  // Filebeat watches this
+                mkdir: true,                              // Create ./logs/ dir if it doesn't exist
+                sync: false,                              // Async writes (non-blocking)
+              },
+            },
           ],
         },
         // INTERVIEW FLEX: Auto-inject Trace ID from OpenTelemetry into every log

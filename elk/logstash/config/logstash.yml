@@ -1,0 +1,14 @@
+# ============================================================
+# Logstash Global Settings
+# ============================================================
+# This file controls Logstash's own behaviour (not the pipeline).
+# The actual log processing pipeline is in: pipeline/main.conf
+# ============================================================
+
+http.host: "0.0.0.0"          # Bind monitoring API to all interfaces
+                               # → lets you hit http://localhost:9600 from host
+
+log.level: info                # Logstash's own log verbosity (debug|info|warn|error)
+
+pipeline.workers: 1            # Number of worker threads for the pipeline
+                               # 1 is fine for local dev — increase for production

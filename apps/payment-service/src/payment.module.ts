@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PaymentController } from './payment.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { LoggerModule } from 'nestjs-pino';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { trace, context } from '@opentelemetry/api';
 
 @Module({
@@ -20,6 +21,7 @@ import { trace, context } from '@opentelemetry/api';
         },
       },
     ]),
+    PrometheusModule.register(), // Expose /metrics
     LoggerModule.forRoot({
       pinoHttp: {
         transport: {
@@ -35,6 +37,15 @@ import { trace, context } from '@opentelemetry/api';
                 interval: 5,
                 host: 'http://localhost:3100', // Loki URL
                 labels: { application: 'payment-service' },
+              },
+            },
+            // ── ELK: Write JSON logs to file for Filebeat to pick up ──
+            {
+              target: 'pino/file',
+              options: {
+                destination: './logs/payment-service.log', // Filebeat watches this
+                mkdir: true,
+                sync: false,
               },
             },
           ],

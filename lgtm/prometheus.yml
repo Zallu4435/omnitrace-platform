@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 5s
+
+# ── REMOTE WRITE ──────────────────────────────────────────
+# This is what makes it part of the LGTM stack.
+# Prometheus scrapes the data, but sends it to Mimir for storage.
+remote_write:
+  - url: http://mimir:9009/api/v1/push
+
+scrape_configs:
+  - job_name: 'nestjs-microservices'
+    static_configs:
+      - targets: 
+          - 'host.docker.internal:3000' # Order Gateway
+          - 'host.docker.internal:3001' # Payment Service

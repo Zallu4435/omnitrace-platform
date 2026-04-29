@@ -1,0 +1,27 @@
+# ============================================================
+# Kibana Configuration
+# ============================================================
+# Kibana is the web UI that sits on top of Elasticsearch.
+# It queries ES directly to power Discover, Dashboards, Lens, etc.
+#
+# Web UI available at: http://localhost:5601
+# ============================================================
+
+# The URL of the Elasticsearch instance Kibana connects to.
+# Uses the Docker service name "elasticsearch" — resolves internally.
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+
+# Bind Kibana's server to all network interfaces.
+# Required so you can access it from your host machine browser.
+server.host: "0.0.0.0"
+
+# Human-friendly name shown in the Kibana UI header.
+server.name: "kibana-observability"
+
+# ── SECURITY ─────────────────────────────────────────────────
+# We disabled xpack.security in Elasticsearch, so no auth needed here.
+# This is fine for local development. NEVER do this in production.
+
+# ── MONITORING ───────────────────────────────────────────────
+# Disable built-in Kibana monitoring (reduces noise for local dev).
+monitoring.enabled: false

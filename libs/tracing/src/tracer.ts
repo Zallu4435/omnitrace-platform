@@ -6,7 +6,10 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 export const setupTracing = (serviceName: string) => {
   const exporter = new OTLPTraceExporter({
-    // This points to the Jaeger OTLP receiver running in Docker
+    // Port 4318 is the OTLP HTTP receiver — shared by both:
+    //   Jaeger (observability/docker-compose.yml)  → visualize at http://localhost:16686
+    //   Tempo  (lgtm/docker-compose.yml)           → visualize via Grafana at http://localhost:5000
+    // Run ONE stack at a time. No code changes needed when switching stacks.
     url: 'http://localhost:4318/v1/traces',
   });
 

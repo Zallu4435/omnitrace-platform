@@ -1,0 +1,69 @@
+# ============================================================
+# Filebeat Configuration
+# ============================================================
+# Filebeat is a lightweight log SHIPPER (a "Beat").
+# It runs as an agent, watches log files, and ships new lines
+# to Logstash (or directly to Elasticsearch).
+#
+# FLOW:  ./logs/*.log  →  Filebeat  →  Logstash:5044
+# ============================================================
+
+# ── INPUTS ───────────────────────────────────────────────────
+# Tell Filebeat WHAT to watch.
+filebeat.inputs:
+
+  # Watch all .log files in the /logs directory.
+  # Each NestJS service writes its own file there.
+  - type: log
+    enabled: true
+
+    paths:
+      - /logs/*.log          # matches: order-gateway.log, payment-service.log, email-service.log
+
+    # Multiline handling: Pino writes one JSON object per line.
+    # But if there's a Node.js stack trace (plain text across multiple lines),
+    # we want to stitch those lines together into one event.
+    multiline.pattern: '^\{'           # A new event starts with '{'
+    multiline.negate: true             # If line does NOT match pattern...
+    multiline.match: after             # ...append it to the previous event
+
+    # Add a field identifying which file this event came from.
+    # Useful in Kibana to distinguish services if you're not parsing the JSON yet.
+    fields:
+      source: "nestjs-microservices"
+      environment: "development"
+    fields_under_root: true   # Promote these fields to root level (not nested under [fields])
+
+    # Filebeat tracks its position in each file using a registry.
+    # This ensures it never re-ships lines it already sent (even after restart).
+    # Registry is stored in the Docker volume: filebeat_registry
+
+
+# ── OUTPUT ───────────────────────────────────────────────────
+# Send to Logstash (not directly to Elasticsearch).
+# Logstash does the heavy parsing and enrichment.
+output.logstash:
+  hosts: ["logstash:5044"]   # Docker service name "logstash" resolves internally
+
+  # Filebeat uses a load-balanced connection to all specified hosts.
+  # For single-node dev, one host is enough.
+
+
+# ── PROCESSORS ───────────────────────────────────────────────
+# Lightweight transformations applied BEFORE shipping.
+# These run in Filebeat (on the host), not in Logstash.
+processors:
+
+  # Add the hostname of the machine running Filebeat.
+  # Useful to know which host produced the log.
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+
+  # Add Filebeat agent metadata (version, name, etc.)
+  - add_cloud_metadata: ~     # Detect AWS/GCP/Azure if running in cloud
+
+
+# ── LOGGING ──────────────────────────────────────────────────
+# Filebeat's own log settings (not your app logs).
+logging.level: info           # info is fine; use debug to troubleshoot shipping issues
+logging.to_files: false       # Log to stderr (Docker captures this to: docker logs elk-filebeat)

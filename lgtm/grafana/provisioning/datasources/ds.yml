@@ -1,0 +1,76 @@
+# ============================================================
+# Grafana Data Sources — Auto-Provisioning
+# ============================================================
+# Grafana reads this file on startup and auto-creates all
+# data sources. The "uid" field is CRITICAL — it is how
+# datasources reference each other for correlation features.
+# ============================================================
+
+apiVersion: 1
+
+datasources:
+
+  # ── 1. MIMIR (Metrics) ──────────────────────────────────
+  # Mimir exposes a Prometheus-compatible query API at /prometheus.
+  # We still name it "Prometheus" so all built-in dashboards work.
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus-uid          # Explicit UID — referenced by Tempo serviceMap below
+    url: http://mimir:9009/prometheus
+    access: proxy
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+
+  # ── 2. LOKI (Logs) ───────────────────────────────────────
+  - name: Loki
+    type: loki
+    uid: loki-uid                # Explicit UID — referenced by Tempo tracesToLogs below
+    url: http://loki:3100
+    access: proxy
+    jsonData:
+      derivedFields:
+        # ── THE MAGIC: Trace-to-Log Correlation ──────────────
+        # When Grafana renders a Loki log line, it scans the raw
+        # JSON text for this regex. If found, it renders a clickable
+        # button that jumps directly to Tempo with that trace ID.
+        #
+        # Our Pino mixin injects: { "traceId": "abc123def456..." }
+        # The regex captures the hex value inside the quotes.
+        - datasourceUid: tempo-uid   # Must match uid of Tempo datasource below
+          matcherRegex: '"traceId":"(\w+)"'
+          name: TraceID
+          url: '${__value.raw}'       # Grafana passes the captured value to Tempo
+
+  # ── 3. TEMPO (Traces) ────────────────────────────────────
+  - name: Tempo
+    type: tempo
+    uid: tempo-uid               # Explicit UID — referenced by Loki derivedFields above
+    url: http://tempo:3200
+    access: proxy
+    jsonData:
+      httpMethod: GET
+
+      # Show a service dependency graph using Prometheus metrics
+      serviceMap:
+        datasourceUid: 'prometheus-uid'   # Must match uid of Prometheus datasource above
+
+      # Enable the visual node graph of services in Tempo UI
+      nodeGraph:
+        enabled: true
+
+      # ── TRACE → LOG Correlation ──────────────────────────
+      # When viewing a trace in Tempo, show a "Logs" button
+      # that opens Loki pre-filtered to logs for that trace.
+      tracesToLogs:
+        datasourceUid: 'loki-uid'         # Must match uid of Loki datasource above
+        tags: ['service.name']            # Use the service.name span attribute to filter logs
+        mapTagNamesEnabled: true
+        spanStartTimeShift: '-1m'         # Show logs 1 min before span started
+        spanEndTimeShift: '1m'            # Show logs 1 min after span ended
+        filterByTraceId: true             # Pre-filter by trace ID in Loki query
+        filterBySpanId: false
+
+      # Enable search via Loki (shows "Search" in Tempo sidebar)
+      lokiSearch:
+        datasourceUid: 'loki-uid'         # Must match uid of Loki datasource above

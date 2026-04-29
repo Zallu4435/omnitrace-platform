@@ -1,0 +1,98 @@
+version: '3.8'
+
+# ============================================================
+# ELK STACK — Elasticsearch + Logstash + Kibana + Filebeat
+# Run with: docker-compose -f elk/docker-compose.yml up -d
+# Stop with: docker-compose -f elk/docker-compose.yml down
+# ============================================================
+#
+# FLOW:
+#   NestJS services → write JSON logs → ./logs/*.log files
+#   Filebeat        → tails *.log files → ships to Logstash :5044
+#   Logstash        → parses/enriches  → sends to Elasticsearch :9200
+#   Elasticsearch   → stores documents → queried by Kibana
+#   Kibana          → web UI at http://localhost:5601
+# ============================================================
+
+services:
+
+  # ── 1. ELASTICSEARCH ──────────────────────────────────────
+  # The search & storage engine. All logs land here as JSON docs.
+  # REST API at http://localhost:9200
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: elk-elasticsearch
+    environment:
+      - discovery.type=single-node # No cluster needed for local dev
+      - xpack.security.enabled=false # Disable auth for easy local dev
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m # Limit memory (512MB heap)
+    ports:
+      - "9200:9200" # REST API — you can curl this to query docs
+      - "9300:9300" # Internal cluster communication (not used in single-node)
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  # ── 2. LOGSTASH ───────────────────────────────────────────
+  # The processing pipeline. Receives logs from Filebeat,
+  # parses JSON, enriches with metadata, forwards to Elasticsearch.
+  # Listens for Beats input on port 5044.
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.0
+    container_name: elk-logstash
+    ports:
+      - "5044:5044" # Beats input (Filebeat connects here)
+      - "9600:9600" # Logstash monitoring API (check pipeline stats)
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro # Our pipeline config
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ../logs:/logs:ro # Shared log directory (read-only for Logstash)
+    environment:
+      - LS_JAVA_OPTS=-Xms256m -Xmx256m # Limit memory (256MB heap)
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  # ── 3. KIBANA ─────────────────────────────────────────────
+  # The visualization UI. Connects to Elasticsearch and lets you
+  # search, filter, and build dashboards from your logs.
+  # Web UI at http://localhost:5601
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    container_name: elk-kibana
+    ports:
+      - "5601:5601" # Web UI
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  # ── 4. FILEBEAT ───────────────────────────────────────────
+  # Lightweight log shipper (a "Beat"). Runs as an agent,
+  # tails your log files, and ships new lines to Logstash.
+  # No web UI — it's a background process.
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.13.0
+    container_name: elk-filebeat
+    user: root # Needs root to read log files from mounted volume
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ../logs:/logs:ro # Shared log directory (read-only for Filebeat)
+      - filebeat_registry:/usr/share/filebeat/data # Registry: tracks file offsets
+    command: filebeat -e -strict.perms=false
+    depends_on:
+      - logstash
+
+volumes:
+  elasticsearch_data:
+    driver: local
+  filebeat_registry:
+    driver: local

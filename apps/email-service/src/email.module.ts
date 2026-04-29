@@ -22,6 +22,15 @@ import { trace, context } from '@opentelemetry/api';
                 labels: { application: 'email-service' },
               },
             },
+            // ── ELK: Write JSON logs to file for Filebeat to pick up ──
+            {
+              target: 'pino/file',
+              options: {
+                destination: './logs/email-service.log',  // Filebeat watches this
+                mkdir: true,
+                sync: false,
+              },
+            },
           ],
         },
         mixin() {
