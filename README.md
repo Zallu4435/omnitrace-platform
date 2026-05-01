@@ -47,11 +47,11 @@ docker-compose -f observability/docker-compose.yml up -d
 ### 3. Install Dependencies
 ```bash
 npm install
-\`\`\`
+```
 
 ### 4. Start the Microservices
 Open three separate terminals to run each service concurrently:
-\`\`\`bash
+```bash
 # Terminal 1
 npm run start order-gateway
 
@@ -60,7 +60,7 @@ npm run start payment-service
 
 # Terminal 3
 npm run start email-service
-\`\`\`
+```
 
 ### 5. Trigger the System
 Send a few POST requests to simulate user traffic and generate observability data:
@@ -79,9 +79,16 @@ Once you have triggered a few orders, explore the generated data across the infr
 | **Grafana (LGTM)** | [http://localhost:5000](http://localhost:5000) | `admin` / `admin` | **LGTM Stack UI** — features Trace-to-Log correlation. |
 | **Kibana** | [http://localhost:5601](http://localhost:5601) | (None) | **ELK Stack UI** — advanced log search and discovery. |
 | **Jaeger** | [http://localhost:16686](http://localhost:16686) | (None) | Waterfall timeline for distributed traces. |
-| **RabbitMQ** | [http://localhost:15672](http://localhost:15672) | `guest` / `guest` | Monitor message queues and exchanges. |
-| **Prometheus**| [http://localhost:9090](http://localhost:9090) | (None) | Query raw metric data and alerting rules. |
+| **Prometheus**| [http://localhost:9090](http://localhost:9090) | (None) | Query raw metric data (Classic Stack). |
 | **Alertmanager**| [http://localhost:9093](http://localhost:9093) | (None) | View active alerts and notifications. |
+| **RabbitMQ** | [http://localhost:15672](http://localhost:15672) | `guest` / `guest` | Monitor message queues and exchanges. |
+| **Elasticsearch**| [http://localhost:9200](http://localhost:9200) | (None) | Raw JSON log storage (ELK Stack). |
+| **Loki** | [http://localhost:3100](http://localhost:3100) | (None) | Raw log query API (Classic/LGTM). |
+| **Tempo** | [http://localhost:3200](http://localhost:3200) | (None) | Raw trace query API (LGTM). |
+| **Mimir** | [http://localhost:9009](http://localhost:9009) | (None) | High-scale metrics storage (LGTM). |
+
+> [!WARNING]
+> **Port Conflicts:** The "Classic" and "LGTM" stacks share ports (3100 for Loki, 4318 for OTLP). **Run only one stack at a time.** Stop one with `docker-compose down` before starting another.
 
 ## 🧠 Key Technical Highlights for Review
 * **Manual Context Propagation (`tracer.ts`):** Check the `PaymentServiceController` to see how the active OpenTelemetry Trace ID is injected into the RabbitMQ message headers, and the `EmailServiceController` to see how it is extracted to resume the trace.
